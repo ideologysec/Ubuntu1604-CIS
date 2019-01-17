@@ -567,12 +567,23 @@
       - rule_1.3.2
 
 - name: "SCORED | 1.4.1 | PATCH | Ensure permissions on bootloader config are configured"
-  file:
-      path: "/boot/grub/grub.cfg"
-      owner: root
-      group: root
-      mode: 0600
-  when: ansible_os_family == "Debian"
+  block:
+      - name: "SCORED | 1.4.1 | PATCH | Register location of grub.cfg"
+        stat:
+            path: /boot/grub/grub.cfg
+        register: grub_cfg
+        failed_when: false
+        changed_when: false
+    
+      - name: "SCORED | 1.4.1 | PATCH | Ensure permissions on bootloader config are configured"
+        file:
+            path: "{{ grub_cfg.stat.lnk_source }}"
+            owner: root
+            group: root
+            mode: 0600
+  when:
+      - grub_cfg.stat.exists and grub_cfg.stat.islnk
+      - ubuntu1604cis_rule_1_4_1
   tags:
       - level1
       - scored
